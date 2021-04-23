@@ -1,12 +1,14 @@
 import '@tensorflow/tfjs';
 import * as bodyPix from '@tensorflow-models/body-pix';
 import { BACKGROUND_RGBA, BackgroundColor } from '../declarations';
+import { imageToCanvas } from './imageToCanvas';
 
 /**
- * @description マスキング処理の初期化、マスキング、stream配信の更新
+ * @descriptio バーチャル背景付与
  */
 export async function maskStream(video: HTMLVideoElement, backgroundColor: BackgroundColor) {
   video.onloadeddata = async () => {
+    imageToCanvas();
     const { canvas, model } = await initBodyPix();
 
     await drawMaskedStream({
@@ -29,7 +31,7 @@ async function initBodyPix() {
 }
 
 /**
- * @description マスキング、描画、必要があればstreamを更新
+ * @description マスキングして描画
  */
 async function drawMaskedStream({
   video,
@@ -43,13 +45,27 @@ async function drawMaskedStream({
   backgroundColor: BackgroundColor;
 }) {
   const segmentation = await model.segmentPerson(video);
-
   const mask = bodyPix.toMask(segmentation, BACKGROUND_RGBA.TRANSPARENT, BACKGROUND_RGBA[backgroundColor]);
 
   const isNotFitMaskSize = video.videoWidth !== mask.width || video.videoHeight !== mask.height;
   if (isNotFitMaskSize) return;
 
-  bodyPix.drawMask(canvas, video, mask, 1, 0, false);
+  const maskingImage = document.getElementById('maskingImage') as HTMLCanvasElement;
+
+  const context = maskingImage.getContext('2d');
+  if (context === null) return;
+
+  const imageData = context.getImageData(0, 0, 320, 180);
+  const pixel = imageData.data;
+  for (let p = 0; p < pixel.length; p += 4) {
+    if (segmentation.data[p / 4] === 0) {
+      pixel[p + 3] = 0;
+    }
+  }
+  context.imageSmoothingEnabled = true;
+  context.putImageData(imageData, 0, 0);
+
+  // bodyPix.drawMask(canvas, video, mask, 1, 0, false);
 
   requestAnimationFrame(() =>
     drawMaskedStream({
