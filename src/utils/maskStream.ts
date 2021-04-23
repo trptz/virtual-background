@@ -1,12 +1,14 @@
 import '@tensorflow/tfjs';
 import * as bodyPix from '@tensorflow-models/body-pix';
 import { BACKGROUND_RGBA, BackgroundColor } from '../declarations';
+import { imageToCanvas } from './imageToCanvas';
 
 /**
  * @descriptio バーチャル背景付与
  */
 export async function maskStream(video: HTMLVideoElement, backgroundColor: BackgroundColor) {
   video.onloadeddata = async () => {
+    imageToCanvas();
     const { canvas, model } = await initBodyPix();
 
     await drawMaskedStream({
@@ -48,7 +50,22 @@ async function drawMaskedStream({
   const isNotFitMaskSize = video.videoWidth !== mask.width || video.videoHeight !== mask.height;
   if (isNotFitMaskSize) return;
 
-  bodyPix.drawMask(canvas, video, mask, 1, 0, false);
+  const maskingImage = document.getElementById('maskingImage') as HTMLCanvasElement;
+
+  const context = maskingImage.getContext('2d');
+  if (context === null) return;
+
+  const imageData = context.getImageData(0, 0, 320, 180);
+  const pixel = imageData.data;
+  for (let p = 0; p < pixel.length; p += 4) {
+    if (segmentation.data[p / 4] === 0) {
+      pixel[p + 3] = 0;
+    }
+  }
+  context.imageSmoothingEnabled = true;
+  context.putImageData(imageData, 0, 0);
+
+  // bodyPix.drawMask(canvas, video, mask, 1, 0, false);
 
   requestAnimationFrame(() =>
     drawMaskedStream({
