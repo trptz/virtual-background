@@ -3,7 +3,7 @@ import * as bodyPix from '@tensorflow-models/body-pix';
 import { BACKGROUND_RGBA, BackgroundColor } from '../declarations';
 
 /**
- * @description マスキング処理の初期化、マスキング、stream配信の更新
+ * @descriptio バーチャル背景付与
  */
 export async function maskStream(video: HTMLVideoElement, backgroundColor: BackgroundColor) {
   video.onloadeddata = async () => {
@@ -29,7 +29,7 @@ async function initBodyPix() {
 }
 
 /**
- * @description マスキング、描画、必要があればstreamを更新
+ * @description マスキングして描画
  */
 async function drawMaskedStream({
   video,
@@ -43,7 +43,6 @@ async function drawMaskedStream({
   backgroundColor: BackgroundColor;
 }) {
   const segmentation = await model.segmentPerson(video);
-
   const mask = bodyPix.toMask(segmentation, BACKGROUND_RGBA.TRANSPARENT, BACKGROUND_RGBA[backgroundColor]);
 
   const isNotFitMaskSize = video.videoWidth !== mask.width || video.videoHeight !== mask.height;
