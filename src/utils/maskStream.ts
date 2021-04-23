@@ -2,14 +2,11 @@ import '@tensorflow/tfjs';
 import * as bodyPix from '@tensorflow-models/body-pix';
 import { BACKGROUND_RGBA, BackgroundColor } from '../declarations';
 
-/**
- * @description マスキング処理の初期化、マスキング、stream配信の更新
- */
-export async function maskStream(video: HTMLVideoElement, backgroundColor: BackgroundColor) {
+export async function maskVideo(video: HTMLVideoElement, backgroundColor: BackgroundColor) {
   video.onloadeddata = async () => {
     const { canvas, model } = await initBodyPix();
 
-    await drawMaskedStream({
+    await drawMaskedVideo({
       video,
       canvas,
       model,
@@ -19,19 +16,24 @@ export async function maskStream(video: HTMLVideoElement, backgroundColor: Backg
 }
 
 /**
- * @description マスキング処理の初期化
+ * @description bodypixモデルのロード
  */
 async function initBodyPix() {
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-  const model = await bodyPix.load();
+  const model = await bodyPix.load({
+    architecture: 'ResNet50',
+    outputStride: 16,
+    multiplier: 1,
+    quantBytes: 4,
+  });
 
   return { canvas, model };
 }
 
 /**
- * @description マスキング、描画、必要があればstreamを更新
+ * @description マスキング、描画
  */
-async function drawMaskedStream({
+async function drawMaskedVideo({
   video,
   canvas,
   model,
@@ -52,7 +54,7 @@ async function drawMaskedStream({
   bodyPix.drawMask(canvas, video, mask, 1, 0, false);
 
   requestAnimationFrame(() =>
-    drawMaskedStream({
+    drawMaskedVideo({
       video,
       canvas,
       model,

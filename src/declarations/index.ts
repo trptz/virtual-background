@@ -20,6 +20,9 @@ export const BACKGROUND_RGBA: { [Key in BackgroundColor]: Color } = {
   [BACKGROUND_COLOR.TRANSPARENT]: { r: 0, g: 0, b: 0, a: 0 },
 } as const;
 
+export const WIDTH = 640;
+export const HEIGHT = 360;
+
 export const VIDEO_CONSTRAINTS = {
-  video: { width: 320, height: 180 },
+  video: { width: WIDTH, height: HEIGHT },
 };
